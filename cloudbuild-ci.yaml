@@ -20,3 +20,5 @@ steps:
     args: ["build", "-t", "vedaai-assessment-mapper-ci:$BUILD_ID", "."]
     waitFor: ["backend-tests", "frontend-build"]
 timeout: 1200s
+options:
+  logging: CLOUD_LOGGING_ONLY

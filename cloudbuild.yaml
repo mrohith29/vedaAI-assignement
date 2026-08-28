@@ -44,8 +44,10 @@ steps:
       - --no-cpu-throttling
       - --max-instances=1
       - --service-account=vedaai-runtime@$PROJECT_ID.iam.gserviceaccount.com
-      - --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+      - --set-secrets=GEMINI_API_KEY=VEDAAI_GEMINI_API_KEY:latest
     waitFor: ["container-push"]
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
 timeout: 1200s
+options:
+  logging: CLOUD_LOGGING_ONLY

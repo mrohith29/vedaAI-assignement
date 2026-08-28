@@ -67,14 +67,14 @@ gcloud config set project $PROJECT_ID
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
 gcloud artifacts repositories create vedaai --repository-format=docker --location=asia-south1
 gcloud iam service-accounts create vedaai-runtime --display-name="VedaAI Cloud Run runtime"
-gcloud secrets create GEMINI_API_KEY --replication-policy=automatic
+gcloud secrets create VEDAAI_GEMINI_API_KEY --replication-policy=automatic
 ```
 
 Add the Gemini key as a secret version in **Secret Manager** in Google Cloud Console. Do not put the real key in `.env.example` or commit it. Then grant the runtime identity access:
 
 ```powershell
 $RUNTIME_SA = "vedaai-runtime@$PROJECT_ID.iam.gserviceaccount.com"
-gcloud secrets add-iam-policy-binding GEMINI_API_KEY --member="serviceAccount:$RUNTIME_SA" --role="roles/secretmanager.secretAccessor"
+gcloud secrets add-iam-policy-binding VEDAAI_GEMINI_API_KEY --member="serviceAccount:$RUNTIME_SA" --role="roles/secretmanager.secretAccessor"
 ```
 
 Grant the Cloud Build service account permission to push images and deploy Cloud Run. You can copy the build service account from **Cloud Build > Settings** in Google Cloud Console:
