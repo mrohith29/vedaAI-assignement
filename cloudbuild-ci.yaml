@@ -1,0 +1,22 @@
+steps:
+  - id: backend-tests
+    name: python:3.12-slim
+    dir: backend
+    entrypoint: sh
+    args:
+      - -c
+      - pip install --disable-pip-version-check -r requirements-dev.txt && python -m pytest tests -q
+    waitFor: ["-"]
+  - id: frontend-build
+    name: node:22-alpine
+    dir: frontend
+    entrypoint: sh
+    args:
+      - -c
+      - npm ci && npm run build
+    waitFor: ["-"]
+  - id: container-build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "vedaai-assessment-mapper-ci:$BUILD_ID", "."]
+    waitFor: ["backend-tests", "frontend-build"]
+timeout: 1200s

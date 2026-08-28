@@ -1,0 +1,51 @@
+substitutions:
+  _SERVICE: vedaai-assessment-mapper
+  _REGION: asia-south1
+  _REPOSITORY: vedaai
+steps:
+  - id: backend-tests
+    name: python:3.12-slim
+    dir: backend
+    entrypoint: sh
+    args:
+      - -c
+      - pip install --disable-pip-version-check -r requirements-dev.txt && python -m pytest tests -q
+    waitFor: ["-"]
+  - id: frontend-build
+    name: node:22-alpine
+    dir: frontend
+    entrypoint: sh
+    args:
+      - -c
+      - npm ci && npm run build
+    waitFor: ["-"]
+  - id: container-build
+    name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID", "."]
+    waitFor: ["backend-tests", "frontend-build"]
+  - id: container-push
+    name: gcr.io/cloud-builders/docker
+    args: ["push", "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID"]
+    waitFor: ["container-build"]
+  - id: cloud-run-deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --memory=1Gi
+      - --timeout=300
+      - --no-cpu-throttling
+      - --max-instances=1
+      - --service-account=vedaai-runtime@$PROJECT_ID.iam.gserviceaccount.com
+      - --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest
+    waitFor: ["container-push"]
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_SERVICE}:$BUILD_ID
+timeout: 1200s
